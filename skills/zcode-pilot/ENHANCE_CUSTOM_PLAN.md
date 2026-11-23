@@ -62,7 +62,7 @@
 - **换供应商/模型**：改 `providerId` + `modelId`，下一次点增强立即生效。
 - **思考强度**：openai-compatible 中转 → `reasoningEffort`（low/medium/high，按中转站支持的值）；
   也可以直接把 `modelId` 换成中转站的思考变体名。anthropic 协议 → `thinkingBudget`。
-- **查 providerId**：跑 `python zcp_polish_zcp_doctor.py`（scripts 目录），第 4 节直接显示命中供应商的 id；
+- **查 providerId**：跑 `python zcp_polish_doctor.py`（scripts 目录），第 4 节直接显示命中供应商的 id；
   或看 `provider_config.json`。
 - **诊断**：增强失败后控制台看 `window.__zcpPolishDiag.lastRequest / lastResult`（含 `how=config/ref/fallback`
   与 `tried` 列表），一眼定位走的是哪一档。

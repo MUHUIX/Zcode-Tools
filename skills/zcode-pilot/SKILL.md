@@ -78,7 +78,7 @@ python "<skill目录>/scripts/zcp_doctor.py" --where  # 只查「插件装在哪
 
 补丁会随 ZCode 升级失效或过时，先确认目标版本，再决定打哪个：
 
-| 补丁 | 3.11.2 及更早 | 3.14.x ~ 3.18.x（实测 3.14.1 / 3.14.3 / 3.15.1 / 3.17.2 / 3.18.0 / 3.18.1 / 3.18.2） |
+| 补丁 | 3.11.2 及更早 | 3.14.x ~ 4.0.x（实测 3.14.1 / 3.14.3 / 3.15.1 / 3.17.2 / 3.18.0 / 3.18.1 / 3.18.2 / 4.0.0） |
 |---|---|---|
 | ① 思考档位透传（内核补丁） | 需要，走 `providerOptionsByLevel` 兜底 | **已过时**：内核机制整体重写（`providerOptionsByLevel` 只剩 schema 定义，`variants/defaultVariant` 已从内核消失），锚点与结构提取都失效。脚本会提示「原生档位机制，本补丁不适用」 |
 | ①′ 档位配置 `--reasoning-config` | 不需要（用 ①） | **需要**：把档位写进 `provider_config.json` 的 `providerModelRules[].config.optionSpecs.reasoningLevel`（`values` = 界面档位、末位即默认；`map` = CEL，内核发请求前求值并合并进请求体；支持 `maxOutputTokens`）。无需内核补丁 |
@@ -1142,7 +1142,7 @@ baseURL + 有 apiKey + 无 `systemDisabledReason`）→ 点选某项即生效。
 **排障**：
 
 ```bash
-python zcp_polish_zcp_doctor.py --override-provider <id> --override-model <model>   # 模拟菜单选择
+python zcp_polish_doctor.py --override-provider <id> --override-model <model>   # 模拟菜单选择
 ```
 
 第 2c 节会直接显示 `enhance_config.json` 当前指定的模型（以及它是否在压过界面选择），
@@ -1168,10 +1168,10 @@ python zcp_polish_zcp_doctor.py --override-provider <id> --override-model <model
 ### 排查（只读工具）
 
 ```bash
-python "<skill目录>/scripts/zcp_polish_zcp_doctor.py"                 # 解析链路体检
-python zcp_polish_zcp_doctor.py --json                                # 机器可读（含 resolve/provider/request/problems）
-python zcp_polish_zcp_doctor.py --probe                               # 加真实连通性探测（耗极少额度）
-python zcp_polish_zcp_doctor.py --probe --model-value "builtin:zai-coding-plan/GLM-5.2"
+python "<skill目录>/scripts/zcp_polish_doctor.py"                 # 解析链路体检
+python zcp_polish_doctor.py --json                                # 机器可读（含 resolve/provider/request/problems）
+python zcp_polish_doctor.py --probe                               # 加真实连通性探测（耗极少额度）
+python zcp_polish_doctor.py --probe --model-value "builtin:zai-coding-plan/GLM-5.2"
 ```
 
 **它逐段复刻 handler 的解析逻辑**（同一套「provider_config.json 优先 + 六档」），
@@ -1321,15 +1321,15 @@ Python 侧 `tests/test_patcher.py::TestEnhancePromptScript`
 |---|---|
 | ★ **要「重启两遍」才生效 / 退出重启后仍不生效** | ★ 写入时机在**退出**不在启动（`启动①补丁→退出时写→自动拉起→启动②生效`）。第一次多半**没退干净**：点 × 只是最小化到托盘，且 ZCode 多进程会残留 `ZCode.exe` → `zcode_running()` 恒真 → 看护一直等（最长 24h）**永不写入**。查 `zcp_doctor.py` **第 7.5 节**：`看护启动 N 次 / 等到退出 0 次` 即中。**彻底退出**（托盘右键退出 + 任务管理器确认无残留），或完全退出后手动 `--all`。详见「为什么有时要重启两遍」 |
 | ★ **更新插件 + 退出重启后仍不生效** | ★ 插件市场「更新」只换插件目录，**不重新注入 app.asar**；而 ≤0.6.0 的同步脚本看到 `--check` 输出里的「已打」就判成 `on` → 永远跳过重跑 → 旧片段永远留在 asar 里，**且不报任何错**。判定：`--enhance-prompt --check` 出现「含旧版组件」即是。**0.6.1+ 已自动识别（新 `stale` 态）**；旧版手动 `--all`。详见「插件更新≠补丁更新」 |
-| 报 `Model is unavailable` | ★ 解析没命中界面所选模型。跑 `zcp_polish_zcp_doctor.py --model-value "<providerId>/<modelId>"` 看 `how=`；`ref` 之外都要查：① 选中供应商是否只在 `provider_config.json` 里（旧版 handler 读的是 `config.json`，见上文 0.5.10）；② 该供应商是否被 `systemDisabledReason` 禁用 |
+| 报 `Model is unavailable` | ★ 解析没命中界面所选模型。跑 `zcp_polish_doctor.py --model-value "<providerId>/<modelId>"` 看 `how=`；`ref` 之外都要查：① 选中供应商是否只在 `provider_config.json` 里（旧版 handler 读的是 `config.json`，见上文 0.5.10）；② 该供应商是否被 `systemDisabledReason` 禁用 |
 | 按钮跑到消息区 / 看不见 | ★ 挂载点跑出了 composer dock。升级到 **0.5.11+**；确认注入也是新版（`--dry-run`）。诊断看 `window.__zcpPolishDiag.reattaches`（>0 = 发生过自愈）与 `hiddenReason` |
 | ★ **图标跑到输入框左上角**（输入框为空 / 会话进行中时） | ★ 挂载点兜底落到了「输入框的祖先」（卡片 / dock），`insertBefore(firstChild)` 正好是左上角。升级到 **0.6.6+**（脚本 `scriptVersion 1.4`）；确认注入也是新版（`--enhance-prompt --dry-run`）。诊断看 `window.__zcpPolishDiag.mountWhere`（应为 `prepend`）与 `scriptVersion` |
 | 升级到 0.5.10 后仍报错 | 确认**注入**也升到了新版：`--enhance-prompt --dry-run` 看是否有「将热更新…（X → Y 字节）」。`--check` 只看挂载标记，不比对脚本内容 |
 | 报「通信桥不可用」 | preload 桥缺失；重跑 `--enhance-prompt` 注入后**重启** ZCode |
 | 按钮不出现 | `window.__zcpPolishDiag.hiddenReason`；找不到输入框 / 找不到工具栏行 |
 | 报 `no-model` | 没有可用候选（全表缺 key/baseURL 或被禁用），按提示补配置 |
-| 报 `no-key` / `no-baseurl` | 命中供应商缺凭据；`zcp_polish_zcp_doctor.py` 第 4 节直接列出 |
-| 本机能用、别人不能 | 典型兜底档差异：对比两台机器的 `zcp_polish_zcp_doctor.py` 输出中的 `how` 与 `providerId` |
+| 报 `no-key` / `no-baseurl` | 命中供应商缺凭据；`zcp_polish_doctor.py` 第 4 节直接列出 |
+| 本机能用、别人不能 | 典型兜底档差异：对比两台机器的 `zcp_polish_doctor.py` 输出中的 `how` 与 `providerId` |
 
 > 注意 `Upstream request failed` 是 vercel-ai 网关的错误措辞（对应
 > `GatewayModelNotFoundError`），属**模型维度**判定（不在套餐内 / 已下线），

@@ -4,12 +4,12 @@ r"""增强提示词（润色按钮）链路诊断 —— 只读，默认不发�
 
 定位「润色没用界面当前选中的模型 / 报 HTTP 400 Model is unavailable」这类跨机差异。
 
-    python zcp_polish_zcp_doctor.py                 # 完整体检
-    python zcp_polish_zcp_doctor.py --json          # 机器可读
-    python zcp_polish_zcp_doctor.py --probe         # 额外做真实连通性探测（会消耗极少量额度）
-    python zcp_polish_zcp_doctor.py --probe --only <providerId>
-    python zcp_polish_zcp_doctor.py --model-value "bc73e3ab-.../glm-5.3" --model-label "glm-5.3"
-    python zcp_polish_zcp_doctor.py --override-provider <id> --override-model <model>
+    python zcp_polish_doctor.py                 # 完整体检
+    python zcp_polish_doctor.py --json          # 机器可读
+    python zcp_polish_doctor.py --probe         # 额外做真实连通性探测（会消耗极少量额度）
+    python zcp_polish_doctor.py --probe --only <providerId>
+    python zcp_polish_doctor.py --model-value "bc73e3ab-.../glm-5.3" --model-label "glm-5.3"
+    python zcp_polish_doctor.py --override-provider <id> --override-model <model>
                                              # 模拟右键菜单选中的模型（explicit 档）
 
 它逐段复刻 app.asar 里 `zcode:enhance-prompt` handler 的解析逻辑，因此

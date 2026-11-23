@@ -37,7 +37,7 @@
   ⑨ ★ explicit 档（右键菜单本次指定）压过 ⓪config 与 ①ref
   ⑩ ★ `{list:true}` 清单模式：只回候选表、**一个请求都不发**
   ⑪ ★ `zcode:enhance-model-save`：持久化选择，且保留其它热配置参数
-  ⑫ ★ `zcp_polish_zcp_doctor.py` 的档位顺序必须与 handler 同构（复刻不能漂移）
+  ⑫ ★ `zcp_polish_doctor.py` 的档位顺序必须与 handler 同构（复刻不能漂移）
 """
 
 import importlib.util
@@ -845,7 +845,7 @@ class TestEnhanceScriptDockAnchoring(unittest.TestCase):
 
 
 class TestDoctorMirrorsHandler(unittest.TestCase):
-    """`zcp_polish_zcp_doctor.py` 必须与 handler 的档位顺序保持一致。
+    """`zcp_polish_doctor.py` 必须与 handler 的档位顺序保持一致。
 
     它是用户排障时**唯一能看到的真相**（GUI 里没有任何档位信息）。一旦两者漂移，
     zcp_doctor 说「会用 A」而按钮实际用 B —— 排障过程本身变成误导，比没有工具更糟。
@@ -857,12 +857,12 @@ class TestDoctorMirrorsHandler(unittest.TestCase):
         path = None
         for cand in (_HERE.parent / "scripts",
                      _HERE.parent / "skills" / "zcode-pilot" / "scripts"):
-            p = cand / "zcp_polish_zcp_doctor.py"
+            p = cand / "zcp_polish_doctor.py"
             if p.is_file():
                 path = p
                 break
         if path is None:
-            raise unittest.SkipTest("未找到 zcp_polish_zcp_doctor.py")
+            raise unittest.SkipTest("未找到 zcp_polish_doctor.py")
         spec = importlib.util.spec_from_file_location("zenh_doctor", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)

@@ -1,7 +1,7 @@
 # zcode-pilot · ZCode 客户端一站式原生增强套件
 
 <p align="left">
-  <a href="https://github.com/HUIdada1/Zcode-Tools/releases"><img src="https://img.shields.io/badge/version-0.9.3-blue.svg?style=flat-square" alt="Version"></a>
+  <a href="https://github.com/HUIdada1/Zcode-Tools/releases"><img src="https://img.shields.io/badge/version-0.9.4-blue.svg?style=flat-square" alt="Version"></a>
   <img src="https://img.shields.io/badge/python-3.10+-3776AB.svg?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/dependencies-0%20(std%20only)-success.svg?style=flat-square" alt="Dependencies">
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=flat-square" alt="Platform">
@@ -30,7 +30,7 @@
 
 | 步骤 | 操作说明 |
 |:---:|---|
-| **1. 环境确认** | 确认电脑已安装 **Python 3.10+**（系统自带或环境变量已配置）及 **ZCode 客户端**（实测支持 3.11.2 ~ 3.18.2，当前验证 3.18.2） |
+| **1. 环境确认** | 确认电脑已安装 **Python 3.10+**（系统自带或环境变量已配置）及 **ZCode 客户端**（实测支持 3.11.2 ~ 4.0.0，当前验证 4.0.0） |
 | **2. 添加市场** | 打开 ZCode **设置 → 插件 → 右上角「创建」→「添加插件市场」**，来源填：<br>`HUIdada1/Zcode-Tools` |
 | **3. 安装插件** | 在「个人」分段找到 **ZCode 原生体验增强**（`ZCode Pilot`），点 **安装**（装好默认启用） |
 | **4. 自动激活** | **完全退出并重启 ZCode**（托盘右键退出），在新会话中发任意一条消息，后台看护进程将自动完成注入并在下次启动后展现全部增强功能！ |
@@ -42,7 +42,7 @@
 > 🧬 **客户端自己升级了，也会自动再注入**：ZCode 升级会整体覆盖 `app.asar`，注入的界面随即消失；插件在**下一次会话启动**时用客户端指纹（版本号 + asar 大小）识别出这次升级，自动把全部补丁重新排给后台看护，你只需要**完全退出一次**（托盘右键 → 退出），看护在退出瞬间写入并自动拉起客户端。三条边界要清楚：
 > 1. **必须先有一次会话启动** —— `SessionStart` 是官方规范里最早的自动触发点（插件清单没有「安装时钩子」）；
 > 2. **退出后不要手动抢跑** —— 写入约 10–60 秒，期间手动打开 ZCode 会让写入被拒绝，只能再退一次；
-> 3. **新客户端若改了 asar 结构**，脚本会按设计「拒绝盲改」并在会话里明确提示，这时才需要更新插件（0.9.0 / 0.9.1 / 0.9.2 已分别复核 3.18.0 / 3.18.1 / 3.18.2 契约）。
+> 3. **新客户端若改了 asar 结构**，脚本会按设计「拒绝盲改」并在会话里明确提示，这时才需要更新插件（0.9.0 / 0.9.1 / 0.9.2 / 0.9.4 已分别复核 3.18.0 / 3.18.1 / 3.18.2 / 4.0.0 契约）。
 
 ---
 
@@ -199,7 +199,7 @@ python skills/zcode-pilot/scripts/zcp_patcher.py --tps-footer --revert
 ```bash
 python zcp_bootstrap.py            # macOS/Linux 使用 python3 zcp_bootstrap.py
 ```
-自动执行平台环境校验、标准库检查、语法构建与 507 项回归测试。
+自动执行平台环境校验、标准库检查、语法构建与 527 项回归测试。
 
 ### 方式 E：全自动流水线
 ```bash
@@ -223,6 +223,12 @@ zcp-run.cmd                        # Windows
 
 <details>
 <summary><b>📜 历史版本审计与故障排查记录</b></summary>
+
+#### 0.9.4（适配复核 ZCode 4.0.0 + 修复 0.9.0 改名遗留的「幽灵测试」）
+- **适配 4.0.0（跨 major 版本复核）**：实测客户端 `4.0.0.10870`（385,203,576 字节 asar）。`tools/check_client_contract.py` 契约 **43/43 全部命中**——三条注入锚点（`index.html` 唯一 `</body>`、preload `contextBridge.exposeInMainWorld("zcode",{`、main `.handle(‹X›.SaveMcpToUserDirectory`）、渲染层 `data-testid`（`v4-composer*` / `v4-stop` / `v4-model-config` / `chat-mode-select-trigger` / `model-provider-add-model-button`）、DOM 契约与遥测字段全数命中，**补丁逻辑零改动**；`--all --check` 与 `--all --dry-run` 八项全绿（自动继续 / TPS / 增强 / 拉取四组件锚点齐备，用量页两条截断表达式在同名 chunk 命中，内核自动判定 3.14+ 原生档位机制「本补丁不适用」）；
+- **专项前提复核**：① 0.9.3 依赖的 draft 字面值在 4.0.0 asar 原样存在（`"data-session-id":t??\`draft\``）；② `index.html` 仍无 CSP meta、无 nonce，普通 `<script>` 挂载安全；③ 全仓不存在版本号比较分支——「3.14+ / ≤3.11」等分界全部基于内核/asar 结构探测，跨 major 不会误入旧分支；客户端升级识别靠指纹（版本号 + asar 大小），4.0.0 当次即正确判定并自动排期重注入（本条链路在升级当日实测走通）；
+- **修复 0.9.0 改名遗留**：批量替换 `doctor.py → zcp_doctor.py` 把 `zcp_polish_doctor.py` 连带错写成不存在的 `zcp_polish_zcp_doctor.py`（19 处：测试、SKILL.md、脚本文档字符串、ENHANCE_CUSTOM_PLAN.md），导致 `tests/test_enhance_handler.py::TestDoctorMirrorsHandler`（锁死「润色排障 doctor 的档位顺序必须与 handler 同构」）**自 0.9.0 起在每个开发机上静默跳过**、约束形同虚设。现已全部改回，该类 7 项测试首次真跑全绿（复刻无漂移）；
+- **文档同步**：支持范围更新至 3.11.2 ~ 4.0.0（README 徽标/上手表/自动再注入边界说明）；`SKILL.md` 版本现状表补入 4.0.0；`docs/CONTRACT.md` §0 版本补齐（上次发版漏同步）；全量回归 527 项通过（6 项 POSIX-only 用例在 Windows 上条件跳过）。
 
 #### 0.9.3（改进：新对话未发消息也能直接切「自动继续」，发出首条后自动带入正式会话；看护启动加活性确认与心跳单例）
 - **看护启动两段式 + 三级兜底（换电脑「退了也不注入」修复）**：0.9.2 的计划任务路径只确认了「PowerShell 命令链执行完」（`TASK_OK`），不确认看护进程真的活着 —— pythonw 被杀软拦截 / Store Python 别名损坏 / 组策略静默拒绝 Start 时全部无声失败，表现为「TASK_OK 打了但退出后照样什么都没注入」。现在拆成「点火（PowerShell → **schtasks.exe** 兜底，绕开 PowerShell 依赖/受限语言模式）→ `wait_watchdog_alive` 等心跳现身才算成功 → 都不行才降级 Popen·树内并留痕」，Popen 降级路径同样做活性确认；
